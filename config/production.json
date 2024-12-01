@@ -1,7 +1,7 @@
 {
   "JWT_KEY": "default_secret_key",
   "JWT_EXPIRESIN": "30",
-  "port": 3004,
+  "port": 3008,
   "db": {
     "url": "mongodb://pachim:jCcbWK3ALklRO5At2GCt@127.0.0.1:27017/realestate?directConnection=true&serverSelectionTimeoutMS=2000&authSource=admin"
   }
