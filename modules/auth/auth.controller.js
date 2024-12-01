@@ -115,6 +115,54 @@ class AuthController extends MainController {
       return this.sendResponse(res, false, null, "Internal Server Error", 500);
     }
   };
+
+  // تابع لاگین
+  login = async (req, res) => {
+    try {
+      console.log("Request Body:", req.body);
+
+      const { email, mobileNumber, password } = req.body;
+
+      // بررسی وجود کاربر
+      const user = await User.findOne({
+        $or: [{ "emails.value": email }, { "mobiles.value": mobileNumber }],
+      });
+
+      if (!user) {
+        return this.sendResponse(res, false, null, "Invalid credentials", 401);
+      }
+
+      // مقایسه رمز عبور وارد شده با رمز عبور هش شده در پایگاه داده
+      const isPasswordValid = await argon2.verify(user.password, password);
+      if (!isPasswordValid) {
+        return this.sendResponse(res, false, null, "Invalid credentials", 401);
+      }
+
+      // ساخت توکن‌های دسترسی و بازخوانی
+      const accessToken = jwt.sign(
+        { userId: user._id, roles: user.roles },
+        config.get("JWT_KEY"),
+        { expiresIn: config.get("JWT_EXPIRESIN") }
+      );
+
+      // ارسال توکن‌ها به کاربر
+      const data = {
+        message: "User logged in successfully",
+        accessToken,
+      };
+
+      return this.sendResponse(
+        res,
+        true,
+        data,
+        "User logged in successfully",
+        200
+      );
+    } catch (error) {
+      console.error("Error in login function:", error);
+      return this.sendResponse(res, false, null, "Internal Server Error", 500);
+    }
+  };
 }
 
 module.exports = AuthController;

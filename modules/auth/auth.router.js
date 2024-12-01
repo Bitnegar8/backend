@@ -6,5 +6,5 @@ const authController = new AuthController(); // ساخت شیء از کلاس
 
 // اطمینان حاصل کنید که این متدها وجود دارند
 router.post("/register", authController.register);
-
+router.post("/login", authController.login);
 module.exports = router;

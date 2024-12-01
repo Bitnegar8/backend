@@ -36,7 +36,7 @@ const UserSchema = new mongoose.Schema(
     firstName: { type: String, required: false },
     lastName: { type: String, required: false },
     fatherName: { type: String, required: false },
-    nationalID: { type: String, required: false, unique: false },
+    userId: { type: String, required: false, unique: false },
     emiratesID: { type: String, required: false, unique: false },
     dateOfBirth: { type: String }, // تاریخ تولد
     nationality: { type: String }, // ملیت
