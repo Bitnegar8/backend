@@ -3,6 +3,6 @@
   "JWT_EXPIRESIN": "30",
   "port": 3001,
   "db": {
-    "url": "mongodb://localhost:27017/MH_RealEstate"
+    "url": "mongodb://localhost:27017/realestate"
   }
 }
