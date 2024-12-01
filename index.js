@@ -9,9 +9,16 @@ const app = express(); // ایجاد نمونه‌ای از اپلیکیشن Exp
 // Middleware برای پردازش درخواست‌های JSON
 app.use(express.json());
 
-// اتصال به MongoDB
+// شناسایی محیط فعلی (development یا production)
+const environment = process.env.NODE_ENV || "development"; // پیش‌فرض: development
+
+console.log(`Running in ${environment} mode`); // چاپ پیامی برای شناسایی محیط
+
+// اتصال به MongoDB با استفاده از URL از فایل پیکربندی
+const dbUrl = config.get("db.url");
+
 mongoose
-  .connect("mongodb://localhost:27017/MH_RealEstate")
+  .connect(dbUrl)
   .then(async () => {
     console.log("MongoDB connected successfully");
     await initializeRolesAndPermissions();
