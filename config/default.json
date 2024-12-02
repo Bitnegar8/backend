@@ -1,6 +1,6 @@
 {
   "JWT_KEY": "default_secret_key",
-  "JWT_EXPIRESIN": "30",
+  "JWT_EXPIRESIN": "30h",
   "port": 3004,
   "db": {
     "url": "mongodb://localhost:27017/realestate"

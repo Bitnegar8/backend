@@ -8,6 +8,7 @@ const MainController = require("./../../main/main.controller");
 
 class AuthController extends MainController {
   // تابع ثبت‌نام
+  // تابع ثبت‌نام
   register = async (req, res) => {
     try {
       console.log("Request Body:", req.body);
@@ -32,7 +33,7 @@ class AuthController extends MainController {
 
       // بررسی وجود کاربر
       const existingUser = await User.findOne({
-        $or: [{ primaryEmail: email }, { primaryMobile: mobileNumber }],
+        $or: [{ "emails.value": email }, { "mobiles.value": mobileNumber }],
       });
       if (existingUser) {
         return this.sendResponse(
@@ -80,24 +81,26 @@ class AuthController extends MainController {
             verificationCodeExpiry: verificationCodeExpiresAt,
           },
         ],
-
         addresses: addresses,
         roles: roleIds,
         preferredLanguage,
         gender,
       });
 
+      // ساخت توکن‌های دسترسی
+      const accessToken = jwt.sign(
+        { userId: newUser._id, roles: newUser.roles },
+        config.get("JWT_KEY"),
+        { expiresIn: config.get("JWT_EXPIRESIN") }
+      );
+
+      // ذخیره توکن در مدل کاربر
+      newUser.token = accessToken;
+
       // ذخیره‌سازی کاربر جدید در پایگاه داده
       await newUser.save();
 
-      // ساخت توکن‌های دسترسی و بازخوانی
-      const accessToken = jwt.sign(
-        { userId: newUser._id, roles: newUser.roles },
-        config.get("JWT_KEY"), // تنظیمات JWT Secret
-        { expiresIn: config.get("JWT_EXPIRESIN") } // زمان انقضای توکن
-      );
-
-      // ارسال توکن‌ها به کاربر
+      // ارسال پاسخ با داده‌های کاربر و توکن
       const data = {
         message: "User registered successfully",
         accessToken,

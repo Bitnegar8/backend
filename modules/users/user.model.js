@@ -45,8 +45,13 @@ const UserSchema = new mongoose.Schema(
     phones: [ContactFieldSchema], // Phone numbers
     addresses: [AddressSchema], // Addresses
     password: { type: String, required: false },
-    accessToken: { type: String },
-    refreshToken: { type: String },
+    token: { type: String },
+    companies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Company",
+      },
+    ],
     preferredLanguage: {
       type: String,
       enum: ["en", "fa", "ar", "fr"],
@@ -58,7 +63,6 @@ const UserSchema = new mongoose.Schema(
       default: "other",
     }, // جنسیت
     roles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Role" }], // ارجاع به مدل Role
-    companies: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }], // فیلد جدید برای ارجاع به کمپانی‌ها
   },
   { timestamps: true }
 );

@@ -1,143 +1,66 @@
 const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
 const User = require("./user.model"); // مدل کاربر
+const Company = require("./../company/company.model");
 const MainController = require("./../../main/main.controller"); // ارث‌بری از MainController
 
 class UserController extends MainController {
-  // متد ثبت‌نام کاربر
-  register = async (req, res) => {
+  // متد ثبت شرکت برای کاربر
+  createCompany = async (req, res) => {
     try {
-      const { firstName, lastName, email, password } = req.body;
+      const { name, businessField, companySize, currentLocation, partners } =
+        req.body;
 
-      // چک کردن اینکه آیا ایمیل قبلاً ثبت شده است یا خیر
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return this.sendResponse(res, false, null, "Email already in use", 400);
-      }
-
-      // رمزنگاری پسورد
-      const hashedPassword = await argon2.hash(password);
-
-      // ساخت کاربر جدید
-      const newUser = new User({
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        roles: ["user"], // یا هر نقش دیگری که می‌خواهید به طور پیش‌فرض بدهید
-      });
-
-      // ذخیره کاربر
-      await newUser.save();
-
-      // پاسخ موفقیت‌آمیز
-      const data = { message: "User registered successfully" };
-      return this.sendResponse(res, true, data);
-    } catch (error) {
-      return this.sendResponse(res, false, null, "Internal Server Error", 500);
-    }
-  };
-
-  // متد ورود (Login)
-  login = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-
-      // یافتن کاربر با ایمیل
-      const user = await User.findOne({ email });
-      if (!user) {
+      // اعتبارسنجی ورودی‌ها
+      if (!name || !businessField || !companySize || !currentLocation) {
         return this.sendResponse(
           res,
           false,
           null,
-          "Invalid email or password",
-          401
-        );
-      }
-
-      // مقایسه پسورد وارد شده با پسورد رمزنگاری‌شده در دیتابیس
-      const passwordMatch = await argon2.verify(user.password, password);
-      if (!passwordMatch) {
-        return this.sendResponse(
-          res,
-          false,
-          null,
-          "Invalid email or password",
-          401
-        );
-      }
-
-      // ساخت توکن دسترسی (Access Token)
-      const accessToken = jwt.sign(
-        { userId: user._id, roles: user.roles }, // payload
-        process.env.ACCESS_TOKEN_SECRET, // باید این مقدار را در .env تنظیم کنید
-        { expiresIn: "1h" } // مدت زمان اعتبار توکن
-      );
-
-      // ساخت توکن بازخوانی (Refresh Token)
-      const refreshToken = jwt.sign(
-        { userId: user._id },
-        process.env.REFRESH_TOKEN_SECRET, // باید این مقدار را در .env تنظیم کنید
-        { expiresIn: "7d" } // مدت زمان اعتبار توکن
-      );
-
-      // ذخیره توکن‌ها در دیتابیس
-      user.accessToken = accessToken;
-      user.refreshToken = refreshToken;
-      await user.save();
-
-      // پاسخ موفقیت‌آمیز با توکن‌ها
-      const data = { accessToken, refreshToken };
-      return this.sendResponse(res, true, data);
-    } catch (error) {
-      return this.sendResponse(res, false, null, "Internal Server Error", 500);
-    }
-  };
-
-  // متد برای بازخوانی توکن (Refresh Token)
-  refreshToken = async (req, res) => {
-    try {
-      const { refreshToken } = req.body;
-      if (!refreshToken) {
-        return this.sendResponse(
-          res,
-          false,
-          null,
-          "Refresh Token is required",
+          "All fields are required",
           400
         );
       }
 
-      // بررسی اعتبار توکن بازخوانی
-      const decoded = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET
-      );
-      const user = await User.findById(decoded.userId);
-      if (!user || user.refreshToken !== refreshToken) {
-        return this.sendResponse(
-          res,
-          false,
-          null,
-          "Invalid Refresh Token",
-          403
-        );
-      }
+      console.log("ooooooooo" + JSON.stringify(req.user));
 
-      // ساخت توکن دسترسی جدید
-      const accessToken = jwt.sign(
-        { userId: user._id, roles: user.roles },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1h" }
-      );
+      // ساخت شرکت جدید
+      const newCompany = new Company({
+        name,
+        businessField,
+        companySize,
+        currentLocation,
+        owner: req.user.userId, // کاربری که شرکت را ایجاد کرده است
+        partners: partners || [], // شرکا (اختیاری)
+      });
 
-      // پاسخ با توکن جدید
-      const data = { accessToken };
+      // ذخیره شرکت در پایگاه داده
+      const savedCompany = await newCompany.save();
+      console.log("savedCompany" + JSON.stringify(req.user.userId));
+
+      const user = await User.findOne({ _id: req.user.userId });
+      await user.companies.push(savedCompany._id);
+      await user.save();
+      // افزودن شناسه شرکت به لیست شرکت‌های کاربر
+      // req.user.companies.push(savedCompany._id);
+      // await req.user.save();
+
+      // پاسخ موفقیت‌آمیز
+      const data = {
+        message: "Company registered successfully",
+        company: savedCompany,
+      };
       return this.sendResponse(res, true, data);
     } catch (error) {
-      return this.sendResponse(res, false, null, "Invalid Refresh Token", 403);
+      return this.sendResponse(
+        res,
+        false,
+        null,
+        "Internal Server Error" + error,
+        500
+      );
     }
   };
 }
 
-module.exports = UserController;
+module.exports = new UserController();
